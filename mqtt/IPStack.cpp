@@ -41,24 +41,24 @@ int IPStack::connect(const char *hostname, int port) {
     }
     // open a socket connection
     DEBUG_printf("Connecting to %s port %u\n", ip4addr_ntoa(&remote_addr), port);
-    tcp_pcb = std::unique_ptr<struct tcp_pcb>(tcp_new_ip_type(IP_GET_TYPE(remote_addr)));
+    tcp_pcb = tcp_new_ip_type(IP_GET_TYPE(remote_addr));
     if (!tcp_pcb) {
         DEBUG_printf("failed to create pcb\n");
         return ERR_MEM;
     }
 
-    tcp_arg(tcp_pcb.get(), this);
-    tcp_poll(tcp_pcb.get(), IPStack::tcp_client_poll, POLL_TIME_S * 2);
-    tcp_sent(tcp_pcb.get(), IPStack::tcp_client_sent);
-    tcp_recv(tcp_pcb.get(), IPStack::tcp_client_recv);
-    tcp_err(tcp_pcb.get(), IPStack::tcp_client_err);
+    tcp_arg(tcp_pcb, this);
+    tcp_poll(tcp_pcb, IPStack::tcp_client_poll, POLL_TIME_S * 2);
+    tcp_sent(tcp_pcb, IPStack::tcp_client_sent);
+    tcp_recv(tcp_pcb, IPStack::tcp_client_recv);
+    tcp_err(tcp_pcb, IPStack::tcp_client_err);
 
     // cyw43_arch_lwip_begin/end should be used around calls into lwIP to ensure correct locking.
     // You can omit them if you are in a callback from lwIP. Note that when using pico_cyw_arch_poll
     // these calls are a no-op and can be omitted, but it is a good practice to use them in
     // case you switch the cyw43_arch type later.
     cyw43_arch_lwip_begin();
-    err_t err = tcp_connect(tcp_pcb.get(), &remote_addr, port, IPStack::tcp_client_connected);
+    err_t err = tcp_connect(tcp_pcb, &remote_addr, port, IPStack::tcp_client_connected);
     cyw43_arch_lwip_end();
 
     return err;
@@ -238,14 +238,14 @@ int IPStack::write(unsigned char *buffer, int len, int timeout) {
     // case you switch the cyw43_arch type later.
     cyw43_arch_lwip_begin();
 
-    err_t err = tcp_write(tcp_pcb.get(), buffer, len, TCP_WRITE_FLAG_COPY);
+    err_t err = tcp_write(tcp_pcb, buffer, len, TCP_WRITE_FLAG_COPY);
     if (err != ERR_OK) {
         DEBUG_printf("Failed to write data %d\n", err);
         rv = -1;
     }
     // headers suggest that this should be called to make sure that data is sent right away
     // however there is TCB_WRITE_FLAG_MORE that possibly indicates the same thing??
-    if (tcp_output(tcp_pcb.get()) != ERR_OK) {
+    if (tcp_output(tcp_pcb) != ERR_OK) {
         // failed! What should I do now?
         rv = -2;
     }
@@ -260,15 +260,15 @@ int IPStack::disconnect() {
 
     err_t err = ERR_OK;
     if (tcp_pcb != nullptr) {
-        tcp_arg(tcp_pcb.get(), NULL);
-        tcp_poll(tcp_pcb.get(), NULL, 0);
-        tcp_sent(tcp_pcb.get(), NULL);
-        tcp_recv(tcp_pcb.get(), NULL);
-        tcp_err(tcp_pcb.get(), NULL);
-        err = tcp_close(tcp_pcb.get());
+        tcp_arg(tcp_pcb, NULL);
+        tcp_poll(tcp_pcb, NULL, 0);
+        tcp_sent(tcp_pcb, NULL);
+        tcp_recv(tcp_pcb, NULL);
+        tcp_err(tcp_pcb, NULL);
+        err = tcp_close(tcp_pcb);
         if (err != ERR_OK) {
             DEBUG_printf("close failed %d, calling abort\n", err);
-            tcp_abort(tcp_pcb.get()); // this deallocates tcp_pcb
+            tcp_abort(tcp_pcb); // this deallocates tcp_pcb if tcp_close failed
             err = ERR_ABRT;
         }
         tcp_pcb = nullptr;

@@ -32,7 +32,7 @@ public:
     static const int BUF_SIZE{2048};
     static const int POLL_TIME_S{5};
 private:
-    std::unique_ptr<struct tcp_pcb> tcp_pcb;
+    struct tcp_pcb *tcp_pcb;
     ip_addr_t remote_addr;
     uint8_t buffer[BUF_SIZE];
     uint16_t count;
