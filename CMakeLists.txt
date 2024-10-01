@@ -1,11 +1,11 @@
 # Set minimum required version of CMake
-cmake_minimum_required(VERSION 3.12)
-
-# Include build functions from Pico SDK
-include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+cmake_minimum_required(VERSION 3.6)
 
 # Set board type because we are building for PicoW
 set(PICO_BOARD pico_w)
+
+# Include build functions from Pico SDK
+include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 
 # Set name of project (as PROJECT_NAME) and C/C   standards
 project(pico-modbus C CXX ASM)
@@ -49,6 +49,10 @@ add_executable(${PROJECT_NAME}
         display/mono_vlsb.h
         display/ssd1306.cpp
         display/ssd1306.h
+        display/mono_horiz.cpp
+        display/mono_horiz.h
+#        display/epd154.cpp
+#        display/epd154.h
 )
 
 # Create map/bin/hex/uf2 files
