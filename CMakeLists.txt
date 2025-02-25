@@ -51,8 +51,8 @@ add_executable(${PROJECT_NAME}
         display/ssd1306.h
         display/mono_horiz.cpp
         display/mono_horiz.h
-#        display/epd154.cpp
-#        display/epd154.h
+        display/epd154.cpp
+        display/epd154.h
 )
 
 # Create map/bin/hex/uf2 files
@@ -76,6 +76,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME} 
         pico_stdlib
         hardware_i2c
+        hardware_spi
         hardware_gpio
         pico_cyw43_arch_lwip_poll
 )
