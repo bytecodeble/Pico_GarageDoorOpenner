@@ -53,6 +53,7 @@ mono_horiz::mono_horiz(const uint8_t *image, uint8_t width_, uint16_t height_, u
 }
 
 void mono_horiz::setpixel(uint16_t x, uint16_t y, uint32_t color) {
+    if(x >= width || y >= height) return;
     size_t index = ((x + y * stride) >> 3) + buffer_offset;
     unsigned int offset = msb ? x & 0x07 : 7 - (x & 0x07);
     buffer.get()[index] = (buffer.get()[index] & ~(0x01 << offset)) | ((color != 0) << offset);
@@ -60,6 +61,7 @@ void mono_horiz::setpixel(uint16_t x, uint16_t y, uint32_t color) {
 }
 
 uint32_t mono_horiz::getpixel(uint16_t x, uint16_t y) const {
+    if(x >= width || y >= height) return 0;
     size_t index = ((x + y * stride) >> 3) + buffer_offset;
     unsigned int offset = msb ? x & 0x07 : 7 - (x & 0x07);
     return (buffer.get()[index] >> (offset)) & 0x01;
