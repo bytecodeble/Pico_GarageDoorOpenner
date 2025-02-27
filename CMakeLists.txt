@@ -53,6 +53,8 @@ add_executable(${PROJECT_NAME}
         display/mono_horiz.h
         display/epd154.cpp
         display/epd154.h
+        display/fonts/gfxfont.h
+        display/fonts/FreeMono12pt7b.h
 )
 
 # Create map/bin/hex/uf2 files
@@ -68,6 +70,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
         mqtt
         uart
         display
+        display/fonts
         paho.mqtt.embedded-c/MQTTPacket/src
         paho.mqtt.embedded-c/MQTTClient/src
 )
