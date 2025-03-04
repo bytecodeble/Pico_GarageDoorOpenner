@@ -55,6 +55,8 @@ add_executable(${PROJECT_NAME}
         display/epd154.h
         display/fonts/gfxfont.h
         display/fonts/FreeMono12pt7b.h
+        display/st7789nobuf.cpp
+        display/st7789nobuf.h
 )
 
 # Create map/bin/hex/uf2 files
