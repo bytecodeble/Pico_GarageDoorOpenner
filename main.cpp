@@ -16,6 +16,8 @@
 #include "FreeMono12pt7b.h"
 #include "st7789nobuf.h"
 
+#include "PicoI2CDevice.h"
+
 // We are using pins 0 and 1, but see the GPIO function select table in the
 // datasheet for information on which other pins can be used.
 #if 0
@@ -34,9 +36,9 @@
 
 //#define USE_MODBUS
 //#define USE_MQTT
-//#define USE_SSD1306
+#define USE_SSD1306
 //#define USE_EPD154
-#define USE_7789
+//#define USE_7789
 
 
 #if defined(USE_SSD1306) || defined(USE_EPD154) || defined(USE_7789)
@@ -83,12 +85,9 @@ int main() {
 
     printf("\nBoot\n");
 #ifdef USE_SSD1306
-    // I2C is "open drain",
-    // pull ups to keep signal high when no data is being sent
-    i2c_init(i2c1, 400 * 1000);
-    gpio_set_function(14, GPIO_FUNC_I2C); // the display has external pull-ups
-    gpio_set_function(15, GPIO_FUNC_I2C); // the display has external pull-ups
-    ssd1306 display(i2c1);
+    auto bus = std::make_shared<PicoI2CBus>(1, 14, 15);
+    PicoI2CDevice dev(bus, 0x3C);
+    ssd1306 display(&dev);
     display.fill(0);
     display.text("Hello", 0, 0);
     mono_vlsb rb(raspberry26x32, 26, 32);
@@ -103,9 +102,12 @@ int main() {
         display.scroll(1, 0);
         display.show();
     }
-    display.text("Done", 20, 20);
+    display.text("Done", 20, 30);
     display.show();
 #endif
+    display.setfont(&FreeMono12pt7b);
+    display.text("Free Mono", 0, 20,1);
+    display.show();
 #endif
 
 #ifdef USE_EPD154
