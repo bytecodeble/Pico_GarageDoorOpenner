@@ -6,6 +6,8 @@
 
 #include "ssd1306.h"
 
+#include <hardware/platform_defs.h>
+
 
 // commands (see datasheet)
 #define SSD1306_SET_MEM_MODE        _u(0x20)
@@ -46,9 +48,8 @@
  * The extra byte is needed for the command byte when updating the display.
  * Height must be multiple of 8.
  */
-ssd1306::ssd1306(i2c_inst *i2c, uint16_t device_address, uint16_t width, uint16_t height) :
-        mono_vlsb(width, height, width, 1),
-        ssd1306_i2c(i2c), address(device_address) {
+ssd1306::ssd1306(i2c_device *dev, uint16_t width, uint16_t height) :
+        mono_vlsb(width, height, width, 1), i2c(dev){
     // set control byte at the beginning of frame buffer
     buffer.get()[0] = 0x40;
     init();
@@ -110,7 +111,8 @@ void ssd1306::send_cmd(uint8_t cmd) {
     // this "data" can be a command or data to follow up a command
     // Co = 1, D/C = 0 => the driver expects a command
     uint8_t buf[2] = {0x80, cmd};
-    i2c_write_blocking(ssd1306_i2c, address, buf, 2, false);
+    i2c->write(buf,2);
+    //i2c_write_blocking(ssd1306_i2c, address, buf, 2, false);
 }
 
 void ssd1306::show() {
@@ -131,5 +133,6 @@ void ssd1306::show() {
     // set control byte at the beginning of frame buffer
     buffer.get()[0] = 0x40;
     // write the frame buffer at one go
-    i2c_write_blocking(ssd1306_i2c, address, buffer.get(), size, false);
+    i2c->write(buffer.get(), size);
+    //i2c_write_blocking(ssd1306_i2c, address, buffer.get(), size, false);
 }
