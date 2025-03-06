@@ -57,6 +57,12 @@ add_executable(${PROJECT_NAME}
         display/fonts/FreeMono12pt7b.h
         display/st7789nobuf.cpp
         display/st7789nobuf.h
+        display/i2c_device.h
+        i2c/PicoI2CDevice.cpp
+        i2c/PicoI2CDevice.h
+        i2c/PicoI2CBus.cpp
+        i2c/PicoI2CBus.h
+        display/spi_device.h
 )
 
 # Create map/bin/hex/uf2 files
@@ -71,6 +77,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE
         modbus
         mqtt
         uart
+        i2c
+        spi
         display
         display/fonts
         paho.mqtt.embedded-c/MQTTPacket/src
