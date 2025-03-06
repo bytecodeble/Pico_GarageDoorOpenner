@@ -283,7 +283,7 @@ void framebuf::drawgfxchar(int c, uint32_t color) {
     int8_t xo = glyph->xOffset,
             yo = glyph->yOffset;
     uint8_t xx, yy, bits = 0, bit = 0;
-    int16_t xo16 = 0, yo16 = 0;
+    //int16_t xo16 = 0, yo16 = 0;
 
     for (yy = 0; yy < h; yy++) {
         for (xx = 0; xx < w; xx++) {
