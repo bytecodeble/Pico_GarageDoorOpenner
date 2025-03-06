@@ -48,7 +48,7 @@
  * The extra byte is needed for the command byte when updating the display.
  * Height must be multiple of 8.
  */
-ssd1306::ssd1306(i2c_device *dev, uint16_t width, uint16_t height) :
+ssd1306::ssd1306(std::shared_ptr<i2c_device> dev, uint16_t width, uint16_t height) :
         mono_vlsb(width, height, width, 1), i2c(dev){
     // set control byte at the beginning of frame buffer
     buffer.get()[0] = 0x40;

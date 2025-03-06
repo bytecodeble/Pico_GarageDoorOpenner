@@ -86,8 +86,8 @@ int main() {
     printf("\nBoot\n");
 #ifdef USE_SSD1306
     auto bus = std::make_shared<PicoI2CBus>(1, 14, 15);
-    PicoI2CDevice dev(bus, 0x3C);
-    ssd1306 display(&dev);
+    auto dev = std::make_shared<PicoI2CDevice>(bus, 0x3C);
+    ssd1306 display(dev);
     display.fill(0);
     display.text("Hello", 0, 0);
     mono_vlsb rb(raspberry26x32, 26, 32);
