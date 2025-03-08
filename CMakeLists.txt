@@ -63,6 +63,10 @@ add_executable(${PROJECT_NAME}
         i2c/PicoI2CBus.cpp
         i2c/PicoI2CBus.h
         display/spi_device.h
+        spi/PicoSPIBus.cpp
+        spi/PicoSPIBus.h
+        spi/PicoSPIDevice.cpp
+        spi/PicoSPIDevice.h
 )
 
 # Create map/bin/hex/uf2 files

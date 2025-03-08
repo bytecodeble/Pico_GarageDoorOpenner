@@ -5,23 +5,16 @@
 #ifndef ST7789NOBUF_H
 #define ST7789NOBUF_H
 
+#include <climits>
+#include <memory>
 #include <hardware/spi.h>
-
 #include "framebuf.h"
+#include "spi_device.h"
 
 class st7789nobuf : public framebuf {
 public:
-    struct Config {
-        spi_inst_t* spi;
-        uint gpio_din;
-        uint gpio_clk;
-        int gpio_cs;
-        uint gpio_dc;
-        uint gpio_rst;
-        uint gpio_bl;
-    };
-
-    explicit st7789nobuf(uint16_t width = 240, uint16_t height = 240, uint8_t rotation = 0);
+    explicit st7789nobuf(std::shared_ptr<spi_device> dev, uint dc_pin, uint rst_pin = UINT_MAX, uint bl_pin = UINT_MAX,
+                         uint16_t width = 240, uint16_t height = 240, uint8_t rotation = 0);
     void show();
 private:
     void setpixel(uint16_t x, uint16_t y, uint32_t color) override;
@@ -38,8 +31,8 @@ private:
     void write(uint32_t value);
     void setaddrwindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
     void writecommand(uint8_t cmd);
-    void set_cs(bool value) const;
     void set_dc(bool value) const;
+    void set_rst(bool value) const;
     void set_bl(bool value) const;
 
     uint8_t _colstart = 0; ///< Some displays need this changed to offset
@@ -51,9 +44,10 @@ private:
 
     uint16_t windowWidth;
     uint16_t windowHeight;
-    bool data_mode;
-    bool use_cs;
-    Config config_;
+    std::shared_ptr<spi_device> spi;
+    uint gpio_dc;
+    uint gpio_rst;
+    uint gpio_bl;
 };
 
 

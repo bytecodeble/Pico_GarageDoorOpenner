@@ -17,6 +17,8 @@
 #include "st7789nobuf.h"
 
 #include "PicoI2CDevice.h"
+#include "PicoSPIBus.h"
+#include "PicoSPIDevice.h"
 
 // We are using pins 0 and 1, but see the GPIO function select table in the
 // datasheet for information on which other pins can be used.
@@ -36,12 +38,12 @@
 
 //#define USE_MODBUS
 //#define USE_MQTT
-#define USE_SSD1306
+//#define USE_SSD1306
 //#define USE_EPD154
-//#define USE_7789
+#define USE_ST7789
 
 
-#if defined(USE_SSD1306) || defined(USE_EPD154) || defined(USE_7789)
+#if defined(USE_SSD1306) || defined(USE_EPD154) || defined(USE_ST7789)
 static const uint8_t raspberry26x32[] =
         {0x0, 0x0, 0xe, 0x7e, 0xfe, 0xff, 0xff, 0xff,
          0xff, 0xff, 0xfe, 0xfe, 0xfc, 0xf8, 0xfc, 0xfe,
@@ -189,7 +191,7 @@ static const unsigned char binary_data[] = {
 #endif
 
 #endif
-#ifdef USE_7789
+#ifdef USE_ST7789
 static const unsigned char binary_data[] = {
     // font edit begin : monohlsb : 48 : 60 : 48
     0x00, 0x3F, 0x00, 0x00, 0xFC, 0x00, 0x07, 0xFF,
@@ -239,7 +241,9 @@ static const unsigned char binary_data[] = {
     0x00, 0x00, 0x00, 0x00, 0x07, 0xE0, 0x00, 0x00
     // font edit end
 };
-    st7789nobuf display(240, 240, 3);
+    auto spi = std::make_shared<PicoSPIBus>(0, 18, 19);
+    auto dev = std::make_shared<PicoSPIDevice>(spi, 17);
+    st7789nobuf display(dev, 16);
     display.fill(0xFFFF);
     display.show();
     display.text("Hello", 0, 0, 0xFFFF);

@@ -97,45 +97,24 @@ static const uint8_t generic_st7789[] =
 // clang-format on
 
 
-st7789nobuf::st7789nobuf(uint16_t width, uint16_t height, uint8_t rotation) : framebuf(width, height), data_mode(false),
-                                                                              use_cs(false) {
-    config_ = {
-        spi0,
-        19,
-        18,
-        17,
-        16,
-        28,
-        27
-    };
-    spi_init(config_.spi, 125 * 1000 * 1000);
-    if (config_.gpio_cs > -1) {
-        use_cs = true;
-        spi_set_format(config_.spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
-    } else {
-        use_cs = false;
-        spi_set_format(config_.spi, 8, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
+st7789nobuf::st7789nobuf(std::shared_ptr<spi_device> dev, uint dc_pin, uint rst_pin, uint bl_pin, uint16_t width,
+                         uint16_t height, uint8_t rotation) : framebuf(width, height), spi(dev), gpio_dc(dc_pin),
+                                                              gpio_rst(rst_pin), gpio_bl(bl_pin) {
+    gpio_init(gpio_dc);
+    gpio_set_dir(gpio_dc, GPIO_OUT);
+
+    if(gpio_bl != UINT_MAX) {
+        gpio_init(gpio_bl);
+        gpio_set_dir(gpio_bl, GPIO_OUT);
+    }
+    if(gpio_rst != UINT_MAX) {
+        gpio_init(gpio_rst);
+        gpio_set_dir(gpio_rst, GPIO_OUT);
     }
 
-    gpio_set_function(config_.gpio_din, GPIO_FUNC_SPI);
-    gpio_set_function(config_.gpio_clk, GPIO_FUNC_SPI);
-
-    if (use_cs) {
-        gpio_init(config_.gpio_cs);
-        gpio_set_dir(config_.gpio_cs, GPIO_OUT);
-        gpio_put(config_.gpio_cs, 1);
-    }
-
-    gpio_init(config_.gpio_dc);
-    gpio_init(config_.gpio_rst);
-    gpio_init(config_.gpio_bl);
-
-    gpio_set_dir(config_.gpio_dc, GPIO_OUT);
-    gpio_set_dir(config_.gpio_rst, GPIO_OUT);
-    gpio_set_dir(config_.gpio_bl, GPIO_OUT);
-
-    gpio_put(config_.gpio_dc, 1);
-    gpio_put(config_.gpio_rst, 1);
+    set_dc(1);
+    set_rst(1);
+    spi->set_cs(1);
     sleep_ms(100);
 
     if (width == 240 && height == 240) {
@@ -163,7 +142,7 @@ st7789nobuf::st7789nobuf(uint16_t width, uint16_t height, uint8_t rotation) : fr
     displayinit(generic_st7789);
     setrotation(rotation);
 
-    gpio_put(config_.gpio_bl, 1);
+    set_bl(1);
 }
 
 void st7789nobuf::show() {
@@ -173,10 +152,10 @@ void st7789nobuf::show() {
 void st7789nobuf::setpixel(uint16_t x, uint16_t y, uint32_t color) {
     if ((x >= 0) && (x < width) && (y >= 0) && (y < height)) {
         //SPI_BEGIN_TRANSACTION();
-        set_cs(0);
+        spi->set_cs(0);
         setaddrwindow(x, y, 1, 1);
         write(static_cast<uint16_t>(color));
-        set_cs(1);
+        spi->set_cs(1);
         //SPI_END_TRANSACTION();
     }
 }
@@ -191,12 +170,12 @@ void st7789nobuf::fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint
         if (x + w >= width) w = width - x;
         if (y + h >= height) h = height - y;
         //SPI_BEGIN_TRANSACTION();
-        set_cs(0);
+        spi->set_cs(0);
         setaddrwindow(x, y, w, h);
         for (uint32_t i = w * h; i > 0; --i) {
             write(static_cast<uint16_t>(color));
         }
-        set_cs(1);
+        spi->set_cs(1);
         //SPI_END_TRANSACTION();
     }
 }
@@ -266,25 +245,25 @@ void st7789nobuf::setrotation(uint8_t rotation) {
 
 void st7789nobuf::command(uint8_t cmd, const uint8_t *data, size_t len) {
     //SPI_BEGIN_TRANSACTION();
-    set_cs(0);
+    spi->set_cs(0);
 
     set_dc(0); // Command mode
     write(cmd); // Send the command byte
     set_dc(1); // data mode
 
     if (len > 0) write(data, len);
-    set_cs(1);
+    spi->set_cs(1);
     //SPI_END_TRANSACTION();
 }
 
 void st7789nobuf::write(const uint8_t *data, size_t len) {
     // spi write
-    spi_write_blocking(config_.spi, data, len);
+    spi->write(data, len);
 }
 
 void st7789nobuf::write(uint8_t value) {
     // spi write
-    spi_write_blocking(config_.spi, &value, 1);
+    spi->write(&value, 1);
 }
 
 void st7789nobuf::write(uint16_t value) {
@@ -296,7 +275,7 @@ void st7789nobuf::write(uint16_t value) {
     uint8_t data[] = {static_cast<uint8_t>(value >> 8), static_cast<uint8_t>(value)};
 #endif
     // spi write
-    write(data, 2);
+    spi->write(data, 2);
 }
 
 void st7789nobuf::write(uint32_t value) {
@@ -315,7 +294,7 @@ void st7789nobuf::write(uint32_t value) {
     };
 #endif
     // spi write
-    write(data, 4);
+    spi->write(data, 4);
 }
 
 
@@ -340,14 +319,14 @@ void st7789nobuf::writecommand(uint8_t cmd) {
     set_dc(1);
 }
 
-void st7789nobuf::set_cs(bool value) const {
-    if (use_cs) gpio_put(config_.gpio_cs, value);
+void st7789nobuf::set_dc(bool value) const {
+    gpio_put(gpio_dc, value);
 }
 
-void st7789nobuf::set_dc(bool value) const {
-    gpio_put(config_.gpio_dc, value);
+void st7789nobuf::set_rst(bool value) const {
+    if(gpio_rst != UINT_MAX) gpio_put(gpio_rst, value);
 }
 
 void st7789nobuf::set_bl(bool value) const {
-    gpio_put(config_.gpio_bl, value);
+    if(gpio_bl != UINT_MAX) gpio_put(gpio_bl, value);
 }
