@@ -67,6 +67,8 @@ add_executable(${PROJECT_NAME}
         spi/PicoSPIBus.h
         spi/PicoSPIDevice.cpp
         spi/PicoSPIDevice.h
+        display/rgb_palette.cpp
+        display/rgb_palette.h
 )
 
 # Create map/bin/hex/uf2 files
