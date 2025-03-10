@@ -120,6 +120,24 @@ void framebuf::text(const std::string &str, uint16_t x, uint16_t y, uint32_t col
     text(str.c_str(), x, y, color);
 }
 
+void framebuf::blit(framebuf &fb, int16_t x, int16_t y) {
+    blit_fb(fb, x, y, no_key_color, nullptr);
+}
+
+void framebuf::blit(framebuf &fb, int16_t x, int16_t y, uint32_t key) {
+    blit_fb(fb, x, y, key, nullptr);
+}
+
+void framebuf::blit(framebuf &fb, int16_t x, int16_t y, uint32_t key, const framebuf &palette) {
+    blit_fb(fb, x, y, key, &palette);
+
+}
+
+void framebuf::blit(framebuf &fb, int16_t x, int16_t y, const framebuf &palette) {
+    blit_fb(fb, x, y, no_key_color, &palette);
+
+}
+
 void framebuf::text(const char *str, uint16_t x, uint16_t y, uint32_t color) {
     if(font) {
         // loop over chars
@@ -167,7 +185,7 @@ void framebuf::fill(uint32_t color) {
     fill_rect(0, 0, width, height, color);
 }
 
-void framebuf::blit(framebuf &source, int16_t x, int16_t y, uint32_t key, const framebuf *palette) {
+void framebuf::blit_fb(framebuf &source, int16_t x, int16_t y, uint32_t key, const framebuf *palette) {
 
     if (
             (x >= width) ||
