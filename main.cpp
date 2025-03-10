@@ -19,6 +19,7 @@
 #include "PicoI2CDevice.h"
 #include "PicoSPIBus.h"
 #include "PicoSPIDevice.h"
+#include "rgb_palette.h"
 
 // We are using pins 0 and 1, but see the GPIO function select table in the
 // datasheet for information on which other pins can be used.
@@ -243,14 +244,14 @@ static const unsigned char binary_data[] = {
 };
     auto spi = std::make_shared<PicoSPIBus>(0, 18, 19);
     auto dev = std::make_shared<PicoSPIDevice>(spi, 17);
-    st7789nobuf display(dev, 16);
+    st7789nobuf display(dev, 27); // old 16
     display.fill(0xFFFF);
     display.show();
     display.text("Hello", 0, 0, 0xFFFF);
     mono_vlsb rb(raspberry26x32, 26, 32);
     mono_horiz rpi(binary_data,48,60);
-    display.blit(rb, 20, 20, 0);
-    display.blit(rpi, 120, 120, 0);
+    display.blit(rb, 20, 20, 0, rgb_palette(2, 0xFC00));
+    display.blit(rpi, 120, 120, 0, rgb_palette(2, 0xF81F));
     display.rect(15, 15, 35, 45, 0x07E0);
     display.line(60, 5, 120, 60, 0xF800);
     display.line(60, 60, 120, 5, 0xF800);
