@@ -9,17 +9,8 @@
 #include "IPStack.h"
 #include "Countdown.h"
 #include "MQTTClient.h"
-#include "ModbusClient.h"
-#include "ModbusRegister.h"
-#include "ssd1306.h"
-#include "epd154.h"
-#include "FreeMono12pt7b.h"
-#include "st7789nobuf.h"
 
 #include "PicoI2CDevice.h"
-#include "PicoSPIBus.h"
-#include "PicoSPIDevice.h"
-#include "rgb_palette.h"
 
 // We are using pins 0 and 1, but see the GPIO function select table in the
 // datasheet for information on which other pins can be used.
@@ -41,7 +32,7 @@
 //#define USE_MQTT
 //#define USE_SSD1306
 //#define USE_EPD154
-#define USE_ST7789
+//#define USE_ST7789
 
 
 #if defined(USE_SSD1306) || defined(USE_EPD154) || defined(USE_ST7789)
@@ -312,6 +303,14 @@ static const unsigned char binary_data[] = {
     produal.write(100);
 #endif
 
+    // step motor pins
+    const uint step_pins[] = {2, 3, 6, 13};
+
+    for (uint pin : step_pins) {
+        gpio_init(pin);
+        gpio_set_dir(pin, GPIO_OUT);
+    }
+
     while (true) {
 #ifdef USE_MODBUS
         if (time_reached(modbus_poll)) {
@@ -379,6 +378,7 @@ static const unsigned char binary_data[] = {
         cyw43_arch_poll(); // obsolete? - see below
         client.yield(100); // socket that client uses calls cyw43_arch_poll()
 #endif
+
         tight_loop_contents();
     }
 }

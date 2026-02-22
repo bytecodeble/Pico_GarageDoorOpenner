@@ -1,3 +1,10 @@
 cmake-build-debug/
+bin/
+build/
+*.elf
+*.bin
+*.uf2
+
 .DS_Store
 .idea
+*.swp

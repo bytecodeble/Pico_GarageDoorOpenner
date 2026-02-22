@@ -38,37 +38,11 @@ add_executable(${PROJECT_NAME}
         mqtt/IPStack.cpp
         mqtt/IPStack.h
         mqtt/lwipopts.h
-        modbus/ModbusRegister.cpp
-        modbus/ModbusRegister.h
-        modbus/ModbusClient.cpp
-        modbus/ModbusClient.h
         ${MQTT_SOURCES}
-        display/framebuf.cpp
-        display/framebuf.h
-        display/mono_vlsb.cpp
-        display/mono_vlsb.h
-        display/ssd1306.cpp
-        display/ssd1306.h
-        display/mono_horiz.cpp
-        display/mono_horiz.h
-        display/epd154.cpp
-        display/epd154.h
-        display/fonts/gfxfont.h
-        display/fonts/FreeMono12pt7b.h
-        display/st7789nobuf.cpp
-        display/st7789nobuf.h
-        display/i2c_device.h
         i2c/PicoI2CDevice.cpp
         i2c/PicoI2CDevice.h
         i2c/PicoI2CBus.cpp
         i2c/PicoI2CBus.h
-        display/spi_device.h
-        spi/PicoSPIBus.cpp
-        spi/PicoSPIBus.h
-        spi/PicoSPIDevice.cpp
-        spi/PicoSPIDevice.h
-        display/rgb_palette.cpp
-        display/rgb_palette.h
 )
 
 # Create map/bin/hex/uf2 files
@@ -95,7 +69,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME} 
         pico_stdlib
         hardware_i2c
-        hardware_spi
         hardware_gpio
         pico_cyw43_arch_lwip_poll
 )
