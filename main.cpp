@@ -12,16 +12,23 @@
 
 #include "PicoI2CDevice.h"
 
+#include "GarageDoor.h"
+#include "StepperMotor.h"
+#include "RotaryEncoder.h"
+
+// wifi ssid and password header file
+#include "SecretConfig.h"
+
 // We are using pins 0 and 1, but see the GPIO function select table in the
 // datasheet for information on which other pins can be used.
 #if 0
 #define UART_NR 0
-#define UART_TX_PIN 0
-#define UART_RX_PIN 1
+#define UART_TX 0
+#define UART_RX 1
 #else
 #define UART_NR 1
-#define UART_TX_PIN 4
-#define UART_RX_PIN 5
+#define UART_TX 4
+#define UART_RX 5
 #endif
 
 #define BAUD_RATE 9600
@@ -62,21 +69,9 @@ void messageArrived(MQTT::MessageData &md) {
 
 
 int main() {
-
-    const uint led_pin = 22;
-    const uint button = 9;
-
-    // Initialize LED pin
-    gpio_init(led_pin);
-    gpio_set_dir(led_pin, GPIO_OUT);
-
-    gpio_init(button);
-    gpio_set_dir(button, GPIO_IN);
-    gpio_pull_up(button);
-
     // Initialize chosen serial port
     stdio_init_all();
-
+    sleep_ms(2000);
     printf("\nBoot\n");
 #ifdef USE_SSD1306
     auto bus = std::make_shared<PicoI2CBus>(1, 14, 15);
@@ -293,7 +288,7 @@ static const unsigned char binary_data[] = {
 #endif
 
 #ifdef USE_MODBUS
-    auto uart{std::make_shared<PicoUart>(UART_NR, UART_TX_PIN, UART_RX_PIN, BAUD_RATE, STOP_BITS)};
+    auto uart{std::make_shared<PicoUart>(UART_NR, UART_TX, UART_RX, BAUD_RATE, STOP_BITS)};
     auto rtu_client{std::make_shared<ModbusClient>(uart)};
     ModbusRegister rh(rtu_client, 241, 256);
     auto modbus_poll = make_timeout_time_ms(3000);
@@ -304,17 +299,91 @@ static const unsigned char binary_data[] = {
 #endif
 
     // step motor pins
-    const uint step_pins[] = {2, 3, 6, 13};
+    const uint STEPPERS[4] = {2, 3, 6, 13};
+    // encoder
+    const uint ENCODER_A = 10;
+    const uint ENCODER_B = 11;
+    // limit switch
+    const uint LIMIT_TOP = 28;
+    const uint LIMIT_BOTTOM = 27;
+    // buttons and led
+    const uint BUTTON_OPERATE = 8; // SW1
+    const uint BUTTON_CAL_1 = 9; // SW0
+    const uint BUTTON_CAL_2 = 7; // SW2
+    const uint LED_ERROR = 20; // For blinking on error
 
-    for (uint pin : step_pins) {
-        gpio_init(pin);
-        gpio_set_dir(pin, GPIO_OUT);
-    }
+    // Initialize hardware
+    StepperMotor motor(STEPPERS);
+    RotaryEncoder encoder(ENCODER_A, ENCODER_B);
+    GarageDoor door(motor, encoder, LIMIT_TOP, LIMIT_BOTTOM);
+
+    // Initialize UI pins
+    gpio_init(BUTTON_OPERATE);
+    gpio_set_dir(BUTTON_OPERATE, GPIO_IN);
+    gpio_pull_up(BUTTON_OPERATE);
+
+    gpio_init(BUTTON_CAL_1);
+    gpio_set_dir(BUTTON_CAL_1, GPIO_IN);
+    gpio_pull_up(BUTTON_CAL_1);
+
+    gpio_init(BUTTON_CAL_2);
+    gpio_set_dir(BUTTON_CAL_2, GPIO_IN);
+    gpio_pull_up(BUTTON_CAL_2);
+
+    gpio_init(LED_ERROR);
+    gpio_set_dir(LED_ERROR, GPIO_OUT);
+
+    printf("Initialization complete. Waiting for commands.\n");
+    printf("Press SW0 and SW2 to start calibration.\n");
+
+    absolute_time_t led_blink_timer = get_absolute_time();
+
+
+
+
 
     while (true) {
+        // Check for calibration command SW0+SW2
+        if (!gpio_get(BUTTON_CAL_1) && !gpio_get(BUTTON_CAL_2)) {
+            sleep_ms(100); // debounce
+            if (!gpio_get(BUTTON_CAL_1) && !gpio_get(BUTTON_CAL_2)) {
+                door.start_calibration();
+                // Wait until buttons are released
+                while(!gpio_get(BUTTON_CAL_1) && !gpio_get(BUTTON_CAL_2));
+            }
+        }
+
+        // Check for operate command  SW1
+        if (!gpio_get(BUTTON_OPERATE)) {
+            sleep_ms(100); // debounce
+            if (!gpio_get(BUTTON_OPERATE)) {
+                door.operate();
+                // Wait until button is released
+                while(!gpio_get(BUTTON_OPERATE));
+            }
+        }
+
+        // update the state machine
+        door.update();
+
+        // update led if stuck
+        if (door.get_state() == DoorState::ERROR_STUCK) {
+            // Blink
+            if (absolute_time_diff_us(get_absolute_time(), led_blink_timer) > 500000) {
+                gpio_put(LED_ERROR, !gpio_get(LED_ERROR));
+                led_blink_timer = get_absolute_time();
+            }
+        } else {
+            gpio_put(LED_ERROR, 0); // Turn off led if not error state
+        }
+
+        // A small safe delay
+        sleep_ms(10);
+    
+
 #ifdef USE_MODBUS
         if (time_reached(modbus_poll)) {
-            gpio_put(led_pin, !gpio_get(led_pin)); // toggle  led
+            gpio_put(led, !gpio_get(led)); // toggle  led
             modbus_poll = delayed_by_ms(modbus_poll, 3000);
             printf("RH=%5.1f%%\n", rh.read() / 10.0);
         }
