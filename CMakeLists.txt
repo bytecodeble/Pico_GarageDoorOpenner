@@ -43,6 +43,12 @@ add_executable(${PROJECT_NAME}
         i2c/PicoI2CDevice.h
         i2c/PicoI2CBus.cpp
         i2c/PicoI2CBus.h
+        StepperMotor.cpp
+        StepperMotor.h
+        RotaryEncoder.cpp
+        RotaryEncoder.h
+        GarageDoor.cpp
+        GarageDoor.h
 )
 
 # Create map/bin/hex/uf2 files
