@@ -49,6 +49,10 @@ add_executable(${PROJECT_NAME}
         RotaryEncoder.h
         GarageDoor.cpp
         GarageDoor.h
+        PersistentState.cpp
+        PersistentState.h
+        MqttController.cpp
+        MqttController.h
 )
 
 # Create map/bin/hex/uf2 files
