@@ -25,23 +25,24 @@ GarageDoor::GarageDoor(StepperMotor& motor, RotaryEncoder& encoder, uint limit_t
     gpio_set_dir(_led_error_pin, GPIO_OUT);
     _led_blink_timer = get_absolute_time();
 
-    // // try to load status from FLash
-    // GarageDoorStateData loaded_data;
-    // if (_persistent_state.load_state(loaded_data)) {
-    //     _calibrated = loaded_data.calibrated;
-    //     _total_steps = loaded_data.total_steps;
-    //     _current_step = loaded_data.current_step;
-    //     printf("Loaded state from flash: cal=%d, total=%d, current=%d\n", _calibrated, _total_steps, _current_step);
-    //
-    //     // Determine the initial state based on the loaded status
-    //     if (_calibrated) {
-    //         if (_current_step <= 0) _state = DoorState::CLOSED;
-    //         else if (_current_step >= _total_steps) _state = DoorState::OPEN;
-    //         else _state = DoorState::STOPPED; // assume it at the middle
-    //     } else {
-    //         printf("No valid state in flash. Please calibrate.\n");
-    //     }
-    // }
+    // try to load status from EEPROM
+    GarageDoorStateData loaded_data;
+    if (_persistent_state.load_state(loaded_data)) {
+        _calibrated = loaded_data.calibrated;
+        _total_steps = loaded_data.total_steps;
+        _current_step = loaded_data.current_step;
+        printf("Loaded state from EEPROM: cal=%d, total=%d, current=%d\n", _calibrated, _total_steps, _current_step);
+
+        // Determine the initial state based on the loaded status
+        if (_calibrated) {
+            if (_current_step <= 0) _state = DoorState::CLOSED;
+            else if (_current_step >= _total_steps) _state = DoorState::OPEN;
+            else _state = DoorState::STOPPED; // assume it at the middle
+        } else {
+            printf("No valid state in EEPROM. Please calibrate.\n");
+            _state = DoorState::CLOSED; // default state
+        }
+    }
 }
 
 DoorState GarageDoor::get_state() const {
@@ -73,7 +74,7 @@ void GarageDoor::save_state() {
     };
 
     _persistent_state.save_state(data_to_save);
-    printf("State saved to flash.\n");
+    printf("State saved.\n");
 }
 
 void GarageDoor::start_calibration() {
@@ -83,9 +84,20 @@ void GarageDoor::start_calibration() {
     _total_steps = 0;
 
     // Move down to bottom limit for original point
+    _last_encoder_tick = get_absolute_time();
     while (gpio_get(_limit_bottom_pin)) {
         _motor.step_backward();
         sleep_ms(MOTOR_DELAY_MS);
+
+        // check for stuck
+        Rotation rot = _encoder.get_rotation();
+        if (rot != Rotation::NONE) _last_encoder_tick = get_absolute_time();
+        if (absolute_time_diff_us(_last_encoder_tick, get_absolute_time()) / 1000 > STUCK_TIMEOUT_MS) {
+            _motor.stop();
+            _state = DoorState::ERROR_STUCK;
+            printf("ERROR: Door stuck during calibration (going down)!\n");
+            return;
+        }
     }
     _motor.stop();
     _current_step = 0;
@@ -93,13 +105,22 @@ void GarageDoor::start_calibration() {
     sleep_ms(500);
 
     // Move up until top limit is hit and count motor steps
+    _last_encoder_tick = get_absolute_time();
     while (gpio_get(_limit_top_pin)) {
         _motor.step_forward();
-
         // count the motor steps
         _total_steps++;
-
         sleep_ms(MOTOR_DELAY_MS);
+
+        Rotation rot = _encoder.get_rotation();
+        if (rot != Rotation::NONE) _last_encoder_tick = get_absolute_time();
+        if (absolute_time_diff_us(_last_encoder_tick, get_absolute_time()) / 1000 > STUCK_TIMEOUT_MS) {
+            _motor.stop();
+            _state = DoorState::ERROR_STUCK;
+            _total_steps = 0;
+            printf("ERROR: Door stuck during calibration (going up)!\n");
+            return;
+        }
     }
     _motor.stop();
     printf("Top limit found. Total steps: %d\n", _total_steps);
@@ -154,8 +175,8 @@ void GarageDoor::update() {
 
     // Main state machine
     if (_state == DoorState::OPENING) {
-        if (!gpio_get(_limit_top_pin) || _current_step >= _total_steps) {
-            stop_moving();
+        if (is_limit_triggered(_limit_top_pin) || _current_step >= _total_steps) {
+            _motor.stop();
             _state = DoorState::OPEN;
             _current_step = _total_steps;
             save_state();
@@ -166,8 +187,8 @@ void GarageDoor::update() {
             check_stuck("opening");
         }
     } else if (_state == DoorState::CLOSING) {
-        if (!gpio_get(_limit_bottom_pin) || _current_step <= 0) {
-            stop_moving();
+        if (is_limit_triggered(_limit_bottom_pin) || _current_step <= 0) {
+            _motor.stop();
             _state = DoorState::CLOSED;
             _current_step = 0;
             save_state();
@@ -178,6 +199,14 @@ void GarageDoor::update() {
             check_stuck("closing");
         }
     }
+}
+
+bool GarageDoor::is_limit_triggered(uint pin) {
+    if (!gpio_get(pin)) {
+        sleep_ms(5);
+        return !gpio_get(pin);
+    }
+    return false;
 }
 
 void GarageDoor::move_up() {

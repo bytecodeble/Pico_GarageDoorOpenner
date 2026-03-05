@@ -2,9 +2,9 @@
 #define PICO_MODBUS_PERSISTENTSTATE_H
 
 #include "pico/stdlib.h"
-#include "hardware/flash.h"
+#include "hardware/i2c.h"
 
-// Define the data structure that stores in Flash
+// Define the data structure that stores in eerpom
 struct GarageDoorStateData {
     uint32_t magic; // validate data
     bool calibrated;
@@ -16,15 +16,17 @@ struct GarageDoorStateData {
 class PersistentState {
 public:
     PersistentState();
-    // load and save to Flash
+    // load and save to eeprom
     bool load_state(GarageDoorStateData& data);
     void save_state(const GarageDoorStateData& data);
 
 private:
     uint32_t calculate_checksum(const GarageDoorStateData& data) const;
-    // Flash target offset must be a multiple of the sector size
-    // save at the very end of Flash
-    static constexpr uint32_t FLASH_TARGET_OFFSET = PICO_FLASH_SIZE_BYTES - FLASH_SECTOR_SIZE;
+    // i2c eeprom
+    static constexpr uint I2C_SDA_PIN = 14;
+    static constexpr uint I2C_SCL_PIN = 15;
+    static constexpr uint8_t EEPROM_ADDR = 0x50; // eeprom i2c address
+    static constexpr uint16_t EEPROM_MEM_ADDR = 0x0000; // Starting address of data storage
 };
 
 #endif //PICO_MODBUS_PERSISTENTSTATE_H

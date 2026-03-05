@@ -55,9 +55,9 @@ int main() {
     sleep_ms(2000);
     printf("\nBoot\n");
 #ifdef USE_MQTT
-    const char *topic = "test-topic";
+    const char *topic = "garage/door";
     IPStack ipstack(WIFI_SSID, WIFI_PASSWORD);
-    // MqttController mqtt(door, ipstack);
+    //MqttController mqtt(door, ipstack);
     auto client = MQTT::Client<IPStack, Countdown>(ipstack);
 
     int rc = ipstack.connect(MQTT_BROKER_IP, 1883);

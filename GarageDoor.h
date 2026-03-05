@@ -29,6 +29,7 @@ public:
     DoorState get_state() const;
     const char* get_state_string() const;
     bool is_calibrated() const;
+    bool is_limit_triggered(uint pin);
 
 private:
     void move_up();
