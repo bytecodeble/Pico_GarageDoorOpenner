@@ -184,6 +184,7 @@ void GarageDoor::update() {
         } else {
             _motor.step_forward();
             _current_step++;
+            sleep_ms(MOTOR_DELAY_MS);
             check_stuck("opening");
         }
     } else if (_state == DoorState::CLOSING) {
@@ -196,6 +197,7 @@ void GarageDoor::update() {
         } else {
             _motor.step_backward();
             _current_step--;
+            sleep_ms(MOTOR_DELAY_MS);
             check_stuck("closing");
         }
     }
@@ -246,8 +248,12 @@ void GarageDoor::update_leds() {
         if (absolute_time_diff_us(_led_blink_timer, get_absolute_time()) > 500000) {
             gpio_put(_led_error_pin, !gpio_get(_led_error_pin));
             _led_blink_timer = get_absolute_time();
-        }else {
-            gpio_put(_led_error_pin, 0);
         }
+    }else {
+        gpio_put(_led_error_pin, 0);
     }
+}
+
+void GarageDoor::reset_stuck_timer() {
+    _last_encoder_tick = get_absolute_time(); // Exposed to external manual refresh time
 }

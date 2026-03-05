@@ -5,6 +5,7 @@
 #include "StepperMotor.h"
 #include "RotaryEncoder.h"
 #include "PersistentState.h"
+#include <functional>
 
 
 enum class DoorState {
@@ -25,6 +26,7 @@ public:
     void operate(); // main operation button
     void update();  // repeatedly called in the main loop
     void update_leds();
+    void reset_stuck_timer();
 
     DoorState get_state() const;
     const char* get_state_string() const;
@@ -56,7 +58,7 @@ private:
     int _current_step;
 
     absolute_time_t _last_encoder_tick;
-    static const uint STUCK_TIMEOUT_MS = 500;
+    static const uint STUCK_TIMEOUT_MS = 3000;
 
     PersistentState _persistent_state;
 };
