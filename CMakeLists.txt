@@ -53,6 +53,7 @@ add_executable(${PROJECT_NAME}
         PersistentState.h
         MqttController.cpp
         MqttController.h
+        SecretConfig_example.h
 )
 
 # Create map/bin/hex/uf2 files
