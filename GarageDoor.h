@@ -54,8 +54,8 @@ private:
     DoorState _last_moving_state; // To remember direction after stopping
 
     bool _calibrated;
-    int _total_steps;
-    int _current_step;
+    int _total_encoder_ticks;
+    int _current_encoder_ticks;
 
     absolute_time_t _last_encoder_tick;
     static const uint STUCK_TIMEOUT_MS = 3000;

@@ -8,8 +8,8 @@
 struct GarageDoorStateData {
     uint32_t magic; // validate data
     bool calibrated;
-    int total_steps;
-    int current_step;
+    int total_ticks;
+    int current_tick;
     uint32_t checksum; // prevent data lost during transition or storing
 };
 

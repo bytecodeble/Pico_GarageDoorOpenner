@@ -12,7 +12,7 @@ PersistentState::PersistentState() {
 
 uint32_t PersistentState::calculate_checksum(const GarageDoorStateData& data) const {
     // a simple calibrate calculation
-    return data.magic + (data.calibrated ? 1 : 0) + data.total_steps + data.current_step;
+    return data.magic + (data.calibrated ? 1 : 0) + data.total_ticks + data.current_tick;
 }
 
 bool PersistentState::load_state(GarageDoorStateData& data) {
