@@ -64,21 +64,13 @@ Main Loop
 
 The controller exposes the following MQTT topics.
 
-Command topic
+Command topic: garage/door/command
 
-garage/door/command
+Commands: OPERATE, CALIBRATE, STATUS
 
-Commands
+Status topic: garage/door/state
 
-OPEN CLOSE STOP CALIBRATE
-
-Status topic
-
-garage/door/state
-
-Possible states
-
-OPEN CLOSED OPENING CLOSING STOPPED ERROR
+Possible states: OPEN, CLOSED, IN_BETWEEN, DOOR_STUCK/NORMAL, CALIBRATED/NOT_CALIBRATED
 
 ---
 
