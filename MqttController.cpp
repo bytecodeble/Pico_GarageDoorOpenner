@@ -127,7 +127,9 @@ void MqttController::yield(int time_ms) {
 
 void MqttController::reconnect() {
     _last_connect_attempt = nil_time;
-    _ipstack.disconnect();
+    _client.disconnect(); // disconnect mqtt first
+    _ipstack.disconnect(); // disconnect tcp next
+    sleep_ms(500); // release pcb
     connect();
 
 }

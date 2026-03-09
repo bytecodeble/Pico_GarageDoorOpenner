@@ -20,7 +20,7 @@ enum class DoorState {
 
 class GarageDoor {
 public:
-    GarageDoor(StepperMotor& motor, RotaryEncoder& encoder, uint limit_top_pin, uint limit_bottom_pin, uint led_error_pin);
+    GarageDoor(StepperMotor& motor, RotaryEncoder& encoder, uint limit_top_pin, uint limit_bottom_pin, const uint led_pins[3]);
 
     void start_calibration();
     void operate(); // main operation button
@@ -45,7 +45,7 @@ private:
     uint _limit_top_pin;
     uint _limit_bottom_pin;
 
-    uint _led_error_pin;
+    uint _led_pins[3];
     absolute_time_t _led_blink_timer;
 
     static constexpr uint32_t MOTOR_DELAY_MS = 2;

@@ -1,12 +1,11 @@
 #include "GarageDoor.h"
 #include <stdio.h>
 
-GarageDoor::GarageDoor(StepperMotor& motor, RotaryEncoder& encoder, uint limit_top_pin, uint limit_bottom_pin, uint led_error_pin)
+GarageDoor::GarageDoor(StepperMotor& motor, RotaryEncoder& encoder, uint limit_top_pin, uint limit_bottom_pin, const uint led_pins[3])
     : _motor(motor),
       _encoder(encoder),
       _limit_top_pin(limit_top_pin),
       _limit_bottom_pin(limit_bottom_pin),
-      _led_error_pin(led_error_pin),
       _state(DoorState::CLOSED), //default state
       _last_moving_state(DoorState::STOPPED),
       _calibrated(false),
@@ -21,8 +20,13 @@ GarageDoor::GarageDoor(StepperMotor& motor, RotaryEncoder& encoder, uint limit_t
     gpio_set_dir(_limit_bottom_pin, GPIO_IN);
     gpio_pull_up(_limit_bottom_pin);
 
-    gpio_init(_led_error_pin);
-    gpio_set_dir(_led_error_pin, GPIO_OUT);
+    _led_pins[0] = led_pins[0];
+    _led_pins[1] = led_pins[1];
+    _led_pins[2] = led_pins[2];
+    for (int i = 0; i < 3; i++) {
+        gpio_init(_led_pins[i]);
+        gpio_set_dir(_led_pins[i], GPIO_OUT);
+    }
     _led_blink_timer = get_absolute_time();
 
     // try to load status from EEPROM
@@ -82,6 +86,10 @@ void GarageDoor::start_calibration() {
     _state = DoorState::CALIBRATING;
     _calibrated = false;
     _total_steps = 0;
+
+    gpio_put(_led_pins[0], 1);
+    gpio_put(_led_pins[1], 1);
+    gpio_put(_led_pins[2], 1);
 
     // Move down to bottom limit for original point
     _last_encoder_tick = get_absolute_time();
@@ -244,13 +252,52 @@ void GarageDoor::check_stuck(const char *direction) {
 }
 
 void GarageDoor::update_leds() {
-    if (_state == DoorState::ERROR_STUCK) {
-        if (absolute_time_diff_us(_led_blink_timer, get_absolute_time()) > 500000) {
-            gpio_put(_led_error_pin, !gpio_get(_led_error_pin));
-            _led_blink_timer = get_absolute_time();
-        }
-    }else {
-        gpio_put(_led_error_pin, 0);
+    switch (_state) {
+        case DoorState::OPENING:
+            // led 2 on when opening
+            gpio_put(_led_pins[0], 0);
+            gpio_put(_led_pins[1], 1);
+            gpio_put(_led_pins[2], 0);
+            break;
+
+        case DoorState::CLOSING:
+            // led 3 on when closing
+            gpio_put(_led_pins[0], 0);
+            gpio_put(_led_pins[1], 0);
+            gpio_put(_led_pins[2], 1);
+            break;
+
+        case DoorState::CALIBRATING:
+            // all turned on
+            gpio_put(_led_pins[0], 1);
+            gpio_put(_led_pins[1], 1);
+            gpio_put(_led_pins[2], 1);
+            break;
+
+        case DoorState::ERROR_STUCK:
+            // all blink if stuck
+            if (absolute_time_diff_us(_led_blink_timer, get_absolute_time()) > 500000) {
+                // reverse status of all leds
+                gpio_put(_led_pins[0], !gpio_get(_led_pins[0]));
+                gpio_put(_led_pins[1], !gpio_get(_led_pins[1]));
+                gpio_put(_led_pins[2], !gpio_get(_led_pins[2]));
+                _led_blink_timer = get_absolute_time();
+            }
+            break;
+
+        case DoorState::OPEN:
+        case DoorState::CLOSED:
+        case DoorState::STOPPED:
+        default:
+            // LED 1 breathing
+            if (absolute_time_diff_us(_led_blink_timer, get_absolute_time()) > 1000000) {
+                gpio_put(_led_pins[0], !gpio_get(_led_pins[0]));
+                _led_blink_timer = get_absolute_time();
+            }
+            // turn off the other two lights
+            gpio_put(_led_pins[1], 0);
+            gpio_put(_led_pins[2], 0);
+            break;
     }
 }
 
