@@ -66,12 +66,12 @@ int main() {
     const uint BUTTON_OPERATE = 8; // SW1
     const uint BUTTON_CAL_1 = 9; // SW0
     const uint BUTTON_CAL_2 = 7; // SW2
-    const uint LED_ERROR = 20; // For blinking on error
+    const uint LED_PINS[3] = {20, 21, 22};
 
     // Initialize hardware
     StepperMotor motor(STEPPERS);
     RotaryEncoder encoder(ENCODER_A, ENCODER_B);
-    GarageDoor door(motor, encoder, LIMIT_TOP, LIMIT_BOTTOM, LED_ERROR);
+    GarageDoor door(motor, encoder, LIMIT_TOP, LIMIT_BOTTOM, LED_PINS);
 
     // Initialize UI pins
     gpio_init(BUTTON_OPERATE);
@@ -85,9 +85,6 @@ int main() {
     gpio_init(BUTTON_CAL_2);
     gpio_set_dir(BUTTON_CAL_2, GPIO_IN);
     gpio_pull_up(BUTTON_CAL_2);
-
-    gpio_init(LED_ERROR);
-    gpio_set_dir(LED_ERROR, GPIO_OUT);
 
     printf("Initialization complete. Waiting for commands.\n");
     printf("Press SW0 and SW2 to start calibration.\n");
