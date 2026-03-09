@@ -44,7 +44,7 @@ Main Loop
 
 ### GPIO Pins: 
 - Stepper Motor Controller: GP2, GP3, GP6, GP13
-- LED for blinking on error: GP20
+- LED for status indication: GP20, GP21, GP22
 - Buttons: SW0 (GP9), SW1 (GP8), SW2 (GP7)
 - Limit Switches: Upper (GP28), Lower (GP27)
 - Rotary Encoder: A (GP16), B (GP17)
